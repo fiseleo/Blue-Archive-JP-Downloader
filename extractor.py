@@ -114,7 +114,7 @@ def extract_assets(
             # the check of the various sub directories is required to avoid // in the path
             obj_dest = os.path.join(
                 dst,
-                *(x for x in obj_path.split("/")[:ignore_first_container_dirs] if x),
+                *obj_path.split("/"),
             )
             os.makedirs(os.path.dirname(obj_dest), exist_ok=True)
             exported.extend(
@@ -174,8 +174,13 @@ def exportFont(obj: Font, fp: str, extension: str = "") -> List[int]:
 def exportMesh(obj: Mesh, fp: str, extension=".obj") -> List[int]:
     if not extension:
         extension = ".obj"
+    exported = obj.export()
+    if exported == False:
+        # invalid mesh export
+        return []
+    Path(fp).mkdir(parents=True, exist_ok=True)
     with open(f"{fp}{extension}", "wt", encoding="utf8", newline="") as f:
-        f.write(obj.export())
+        f.write(exported)
     return [(obj.assets_file, obj.path_id)]
 
 
@@ -261,8 +266,15 @@ def exportSprite(obj: Sprite, fp: str, extension: str = ".png") -> List[int]:
 def exportTexture2D(obj: Texture2D, fp: str, extension: str = ".png") -> List[int]:
     if not extension:
         extension = ".png"
+    if extension.upper() == '.PSD':
+        # file that has 'psd' extension regard as 'png' file
+        extension = '.png'
+    if obj.image.mode == 'RGBA':
+        # jpeg texture cannot be 'rgba'
+        extension = '.png'
     if obj.m_Width:
         # textures can be empty
+        Path(fp).mkdir(parents=True, exist_ok=True)
         obj.image.save(f"{fp}{extension}")
     return [(obj.assets_file, obj.path_id)]
 
@@ -295,7 +307,7 @@ EXPORT_TYPES = {
     ClassIDType.Font: exportFont,
     ClassIDType.Mesh: exportMesh,
     ClassIDType.MonoBehaviour: exportMonoBehaviour,
-    ClassIDType.Shader: exporShader,
+    # ClassIDType.Shader: exporShader,
     ClassIDType.TextAsset: exportTextAsset,
     ClassIDType.Texture2D: exportTexture2D,
 }
