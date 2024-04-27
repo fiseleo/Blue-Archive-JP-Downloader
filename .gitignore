@@ -7,6 +7,9 @@ disassembly/
 frida/
 *.apk
 update_master.py
+FlatData/
+dump.cs
+BlueArchive.fbs
 
 # Distribution / packaging
 .Python
