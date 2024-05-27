@@ -15,6 +15,7 @@ so all you have to do is execute the download_assets.py script after every updat
 - xxhash
 - pycryptodome
 - flatbuffers
+- [.NET8.0 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 
 # Scripts
 

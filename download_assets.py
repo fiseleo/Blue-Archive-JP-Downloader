@@ -5,6 +5,9 @@ import io
 import re
 import binascii
 import UnityPy
+import json
+import platform
+import subprocess
 ROOT = os.path.dirname(os.path.realpath(__file__))
 RAW = os.path.join(ROOT, "raw")
 EXT = os.path.join(ROOT, "extracted")
@@ -41,8 +44,8 @@ def main():
             dest_path = os.path.join(RAW, filename)
         elif 'TableBundles' in file_url:
             dest_path = os.path.join(EXT, 'TableBundles', filename)
-        #elif 'MediaResources' in file_url:
-            #dest_path = os.path.join(EXT, 'MediaResources', path)
+        elif 'MediaResources' in file_url:
+            dest_path = os.path.join(EXT, 'MediaResources', path)
         else:
             dest_path = os.path.join(EXT, filename)    
         print(filename)
@@ -79,12 +82,25 @@ def getAllGameFiles():
     resT = requests.get(TableBundles_url).json()
     for key, asset in resT["Table"].items():  #
         data.append((base_url + '/TableBundles/' + asset["Name"], "", asset.get("Crc", 0)))  
-    # MediaResources Yostar把/MediaResources/MediaCatalog.json關了
-    #MediaResources_url = base_url + '/MediaResources/MediaCatalog.json'
-    #resM = requests.get(MediaResources_url).json()
-    #for key, value in resM["Table"].items():
-        #media_url = base_url + '/MediaResources/' + value["path"]
-        #data.append((media_url, value["path"], value.get("Crc", 0)))  
+    MediaResources_url = base_url + '/MediaResources/MediaCatalog.bytes'
+    if not os.path.exists(RAW):
+        os.makedirs(RAW)
+    input_file_path = os.path.join(RAW, 'MediaCatalog.bytes')
+    response = requests.get(MediaResources_url)
+    response.raise_for_status()
+    with open(input_file_path, 'wb') as file:
+        file.write(response.content)
+    output_file_path = os.path.join(EXT, 'MediaResources', 'MediaCatalog.json')
+    if platform.system() == 'Windows':
+        exe_path = os.path.abspath("MemoryPackDeserializer/MemoryPackDeserializer.exe")
+    else:
+        exe_path = os.path.abspath("MemoryPackDeserializer/MemoryPackDeserializer")
+    subprocess.run([exe_path, input_file_path, output_file_path])
+    with open(output_file_path, 'r') as f:
+        resM = json.load(f)
+    for key, value in resM["Table"].items():
+        media_url = base_url + '/MediaResources/' + value["Path"]
+        data.append((media_url, value["Path"], value.get("Crc", 0)))  
     return data
 # 下載文件
 def downloadFile(url, filename):
